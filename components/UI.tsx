@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppScreen, GameStats, UserProfile, AppSettings } from '../types';
-import { Play, Home, RefreshCw, Trophy, ShoppingBag, User, Settings, Star, Heart, Volume2, VolumeX, Moon, Sun, ArrowLeft, Smartphone, CreditCard, Globe, Zap, GraduationCap, Cpu, CheckCircle } from 'lucide-react';
+import { Play, Home, RefreshCw, Trophy, ShoppingBag, User, Settings, Star, Heart, Volume2, VolumeX, Moon, Sun, ArrowLeft, Smartphone, CreditCard, Globe, Zap, GraduationCap, Cpu, CheckCircle, Share2 } from 'lucide-react';
 import { getCrashAnalysis, getMissionBriefing } from '../services/geminiService';
 
 // --- Shared Components ---
@@ -176,6 +177,12 @@ export const GameOverScreen = ({ stats, onRestart, onHome }: { stats: GameStats,
     getCrashAnalysis(stats).then(setAnalysis);
   }, [stats]);
 
+  const handleShare = () => {
+      // Short & Punchy Marketing Text
+      const text = `FPV #FlappyBird in 3D! 🍄✈️ Can you beat my score of ${stats.score}? Play: ${window.location.href}`;
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in zoom-in duration-300">
         <Card className="w-full max-w-md border-red-500 bg-white">
@@ -219,6 +226,9 @@ export const GameOverScreen = ({ stats, onRestart, onHome }: { stats: GameStats,
                 <div className="flex gap-3">
                      <Button variant="accent" onClick={onHome} className="flex-1 shadow-[0_6px_0_#ca8a04]">
                         <Home size={20} /> MENU
+                     </Button>
+                     <Button variant="neutral" onClick={handleShare} className="flex-1 shadow-[0_6px_0_#1e40af] bg-blue-500 border-blue-600 text-white hover:bg-blue-400">
+                        <Share2 size={20} /> SHARE
                      </Button>
                 </div>
             </div>
@@ -275,6 +285,63 @@ export const ShopScreen = ({ onBack, user }: { onBack: () => void, user: UserPro
     </div>
 );
 
+export const SettingsScreen = ({ onBack, settings, onUpdateSettings }: { onBack: () => void, settings: AppSettings, onUpdateSettings: (s: AppSettings) => void }) => {
+    const toggle = (key: keyof AppSettings) => {
+        onUpdateSettings({ ...settings, [key]: !settings[key] });
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 bg-[#5c94fc] p-6 overflow-y-auto">
+            <div className="max-w-md mx-auto space-y-6">
+                 <div className="flex items-center gap-4 mb-6">
+                    <button onClick={onBack} className="p-3 bg-white rounded-full text-slate-800 shadow-md hover:scale-110 transition-transform"><ArrowLeft size={24}/></button>
+                    <h2 className="text-3xl font-black text-white drop-shadow-md">Settings</h2>
+                </div>
+
+                <div className="bg-white rounded-3xl p-6 shadow-xl border-4 border-slate-100 space-y-6">
+                    {/* Volume */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-black text-slate-700 uppercase border-b-2 border-slate-100 pb-2">Audio</h3>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-slate-700 font-bold">
+                                {settings.musicVolume ? <Volume2 /> : <VolumeX />} Music
+                            </div>
+                            <div onClick={() => toggle('musicVolume')} className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors ${settings.musicVolume ? 'bg-green-500' : 'bg-slate-300'}`}>
+                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${settings.musicVolume ? 'translate-x-6' : ''}`}></div>
+                            </div>
+                        </div>
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-slate-700 font-bold">
+                                <Zap size={24} /> SFX
+                            </div>
+                            <div onClick={() => toggle('sfxVolume')} className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors ${settings.sfxVolume ? 'bg-green-500' : 'bg-slate-300'}`}>
+                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${settings.sfxVolume ? 'translate-x-6' : ''}`}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Graphics */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-black text-slate-700 uppercase border-b-2 border-slate-100 pb-2">Graphics</h3>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-slate-700 font-bold">
+                                {settings.highQuality ? <Sun /> : <Moon />} High Quality (Shadows)
+                            </div>
+                            <div onClick={() => toggle('highQuality')} className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors ${settings.highQuality ? 'bg-blue-500' : 'bg-slate-300'}`}>
+                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${settings.highQuality ? 'translate-x-6' : ''}`}></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                 <div className="text-center text-white/60 font-bold text-sm">
+                    Flying Plumber v1.1
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const DonationScreen = ({ onBack, onDonate, user }: { onBack: () => void, onDonate: (amount: number) => void, user: UserProfile }) => {
     const [customAmount, setCustomAmount] = useState<string>('');
     const [waitingForPayment, setWaitingForPayment] = useState(false);
@@ -283,30 +350,34 @@ export const DonationScreen = ({ onBack, onDonate, user }: { onBack: () => void,
     // --- CONFIGURATION START ---
     const RECEIVER_UPI_ID = 'choppabhargav95@okhdfcbank'; 
     const RECEIVER_NAME = 'Super Plumber Dev';
+    // Exchange rate to convert USD input to INR for payment logic
+    const USD_TO_INR = 87.00;
     
     // REPLACE THIS WITH YOUR ACTUAL PAYPAL.ME LINK for international support
     const INTERNATIONAL_LINK = 'https://paypal.me/choppabhargav'; 
     // --- CONFIGURATION END ---
 
-    const getAmount = () => {
+    const getAmountUSD = () => {
         const amt = parseFloat(customAmount || '5');
         return (amt && !isNaN(amt) && amt > 0) ? amt : 5;
     }
 
-    const currentAmount = getAmount();
+    const currentAmountUSD = getAmountUSD();
+    const currentAmountINR = currentAmountUSD * USD_TO_INR;
+
     // Use 'am' for amount, 'cu' for Currency (INR)
     
     // Generic UPI URL for QR Code (compatible with all apps)
-    const upiUrl = `upi://pay?pa=${RECEIVER_UPI_ID}&pn=${encodeURIComponent(RECEIVER_NAME)}&am=${currentAmount.toFixed(2)}&cu=INR`;
+    const upiUrl = `upi://pay?pa=${RECEIVER_UPI_ID}&pn=${encodeURIComponent(RECEIVER_NAME)}&am=${currentAmountINR.toFixed(2)}&cu=INR`;
     
     // Google Pay (Tez) Specific URL for button (Prioritizes GPay app)
-    const gpayUrl = `tez://upi/pay?pa=${RECEIVER_UPI_ID}&pn=${encodeURIComponent(RECEIVER_NAME)}&am=${currentAmount.toFixed(2)}&cu=INR`;
+    const gpayUrl = `tez://upi/pay?pa=${RECEIVER_UPI_ID}&pn=${encodeURIComponent(RECEIVER_NAME)}&am=${currentAmountINR.toFixed(2)}&cu=INR`;
     
     // Generate QR Code URL using a public API
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
 
     const handleGPay = () => {
-        if (!customAmount && !window.confirm(`Donate $${currentAmount}?`)) return;
+        if (!customAmount && !window.confirm(`Donate $${currentAmountUSD} (approx ₹${currentAmountINR.toFixed(0)})?`)) return;
         
         // Attempt to open the app using location.href to strictly follow the deep link
         // logic on mobile devices and prioritize Google Pay.
@@ -318,7 +389,7 @@ export const DonationScreen = ({ onBack, onDonate, user }: { onBack: () => void,
     };
 
     const handlePaymentConfirmation = () => {
-        onDonate(currentAmount);
+        onDonate(currentAmountUSD);
         setWaitingForPayment(false);
         setShowThankYou(true);
         setTimeout(() => setShowThankYou(false), 5000);
@@ -340,218 +411,111 @@ export const DonationScreen = ({ onBack, onDonate, user }: { onBack: () => void,
                          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4 border-4 border-green-200">
                             <CheckCircle size={64} className="text-green-500" />
                          </div>
-                         <h3 className="text-3xl font-black text-slate-800 mb-2">Thank You!</h3>
-                         <p className="text-slate-500 font-medium">You are a legend!</p>
+                         <h3 className="text-2xl font-black text-slate-800 mb-2">Thank You!</h3>
+                         <p className="text-slate-500 font-medium text-center mb-6">Your support helps build better AI education tools.</p>
+                         <Button onClick={() => setShowThankYou(false)} variant="secondary">Awesome!</Button>
                     </div>
                 )}
 
-                {/* Header Mission */}
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
-                    <div className="absolute top-10 -left-10 w-24 h-24 bg-yellow-400 opacity-20 rounded-full blur-xl"></div>
-                    
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30">
-                        <Zap size={32} fill="currentColor" className="text-yellow-300" />
-                    </div>
-                    <h3 className="text-2xl font-black mb-2 leading-tight">Fuel the Future of AI</h3>
-                    <p className="text-purple-100 text-xs font-bold uppercase tracking-wide opacity-90">
-                        Become a Patron of Innovation
+                <div className="bg-purple-50 p-4 rounded-2xl border-2 border-purple-100">
+                    <h3 className="text-purple-900 font-black text-lg mb-1">Fuel the Future of AI</h3>
+                    <p className="text-purple-700/80 text-sm leading-relaxed">
+                        Your donation directly supports the development of <span className="font-bold">Open Source AI Tools</span> and free <span className="font-bold">Student Education</span> resources.
                     </p>
-                </div>
-
-                {/* Impact Info */}
-                <div className="grid grid-cols-2 gap-3 text-left">
-                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col gap-2">
-                         <div className="p-2 bg-blue-100 w-fit rounded-lg text-blue-600">
-                             <GraduationCap size={20} />
-                         </div>
-                         <div>
-                             <div className="font-bold text-slate-800 text-sm">Education</div>
-                             <div className="text-[10px] text-slate-500 leading-tight">Creating free AI tools for students.</div>
-                         </div>
-                    </div>
-                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex flex-col gap-2">
-                         <div className="p-2 bg-emerald-100 w-fit rounded-lg text-emerald-600">
-                             <Cpu size={20} />
-                         </div>
-                         <div>
-                             <div className="font-bold text-slate-800 text-sm">Open Source</div>
-                             <div className="text-[10px] text-slate-500 leading-tight">Advancing public AI research.</div>
-                         </div>
+                    
+                     <div className="flex gap-2 mt-4 justify-center">
+                        <div className="bg-white p-2 px-3 rounded-lg shadow-sm flex items-center gap-2 text-xs font-bold text-slate-600">
+                            <GraduationCap size={16} className="text-purple-500"/> Education
+                        </div>
+                        <div className="bg-white p-2 px-3 rounded-lg shadow-sm flex items-center gap-2 text-xs font-bold text-slate-600">
+                             <Cpu size={16} className="text-purple-500"/> R&D
+                        </div>
                     </div>
                 </div>
 
-                {/* Amount Selector */}
-                <div className="grid grid-cols-4 gap-2">
-                    {[1, 5, 10, 20].map((amount) => (
-                        <button 
-                            key={amount}
-                            onClick={() => setCustomAmount(amount.toString())}
-                            className={`group relative overflow-hidden border-2 p-2 rounded-xl transition-all transform hover:scale-105 active:scale-95 ${customAmount === amount.toString() ? 'border-purple-500 bg-purple-50' : 'border-slate-200 bg-white'}`}
-                        >
-                            <div className={`text-xl font-black transition-colors ${customAmount === amount.toString() ? 'text-purple-500' : 'text-slate-400'}`}>${amount}</div>
-                        </button>
-                    ))}
-                </div>
-
+                {/* Amount Selection */}
                 <div className="space-y-4">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[1, 5, 10, 20].map(amount => (
+                            <button 
+                                key={amount}
+                                onClick={() => setCustomAmount(amount.toString())}
+                                className={`p-3 rounded-xl font-black text-lg transition-all border-2 ${customAmount === amount.toString() ? 'bg-purple-500 border-purple-600 text-white shadow-md scale-105' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                ${amount}
+                            </button>
+                        ))}
+                    </div>
+                    
                     <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xl">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">$</span>
                         <input 
                             type="number" 
                             value={customAmount}
                             onChange={(e) => setCustomAmount(e.target.value)}
                             placeholder="Custom Amount"
-                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-10 text-2xl font-black text-slate-700 focus:outline-none focus:border-purple-500 focus:bg-white transition-all text-center"
+                            className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 focus:outline-none focus:border-purple-500 transition-colors bg-slate-50"
                         />
                     </div>
-                    
-                    {waitingForPayment ? (
-                         <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 animate-in fade-in duration-300">
-                            <p className="text-sm font-bold text-slate-600 mb-3">Checking for payment...</p>
-                            <div className="space-y-2">
-                                <Button variant="secondary" onClick={handlePaymentConfirmation} className="shadow-[0_4px_0_#15803d]">
-                                    I have sent ${currentAmount}
-                                </Button>
-                                <button onClick={() => setWaitingForPayment(false)} className="text-xs text-slate-400 font-bold underline py-2">
-                                    Cancel
-                                </button>
+                    <div className="text-xs font-bold text-slate-400">
+                        (Approx. ₹{currentAmountINR.toFixed(2)} INR)
+                    </div>
+                </div>
+                
+                {/* QR Code Section for Desktop */}
+                <div className="hidden md:block bg-white p-4 rounded-2xl border-2 border-slate-100 shadow-inner">
+                     <div className="text-xs font-black text-slate-400 uppercase mb-2">Scan to Pay (UPI)</div>
+                     <div className="flex justify-center">
+                        <img src={qrCodeUrl} alt="Payment QR" className="w-32 h-32 mix-blend-multiply opacity-90" />
+                     </div>
+                </div>
+
+                {/* Payment Actions */}
+                <div className="space-y-3">
+                     {!waitingForPayment ? (
+                        <Button onClick={handleGPay} variant="gpay" className="py-4 shadow-[0_6px_0_#1e293b]">
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                                    <span className="text-[10px] font-bold text-black">G</span>
+                                </div>
+                                <span>Pay with GPay</span>
                             </div>
-                         </div>
-                    ) : (
-                        <Button variant="gpay" onClick={handleGPay} className="flex items-center justify-center gap-2 shadow-[0_6px_0_#1e293b]">
-                            <div className="flex items-center gap-1">
-                                <span className="font-bold text-lg tracking-tight">G</span>
-                                <span className="font-bold text-lg tracking-tight text-blue-400">Pay</span>
-                            </div>
-                            <span className="text-sm font-medium text-slate-400 border-l border-slate-700 pl-3 ml-1">Donate ${currentAmount.toFixed(2)}</span>
                         </Button>
-                    )}
-                </div>
-
-                {/* QR CODE SECTION */}
-                <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200 relative overflow-hidden">
-                     <div className="absolute top-0 right-0 p-2 opacity-10">
-                         <Smartphone size={100} />
+                     ) : (
+                         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
+                             <div className="text-sm font-bold text-slate-600 bg-yellow-50 p-3 rounded-xl border border-yellow-200">
+                                 Check your GPay app to complete the transaction.
+                             </div>
+                             <Button onClick={handlePaymentConfirmation} variant="secondary">
+                                 <CheckCircle size={20} className="mr-2"/> I have completed payment
+                             </Button>
+                             <button onClick={() => setWaitingForPayment(false)} className="text-xs text-slate-400 font-bold hover:text-slate-600 underline">
+                                 Cancel
+                             </button>
+                         </div>
+                     )}
+                     
+                     <div className="text-[10px] font-black text-slate-800 uppercase tracking-wider">
+                         Scan with GPay, Paytm, or PhonePe
                      </div>
-                    <div className="text-xs font-bold text-slate-500 uppercase mb-3 relative z-10">
-                        Playing on Desktop?
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-200 inline-block shadow-sm relative z-10">
-                        <img src={qrCodeUrl} alt="Payment QR" className="w-32 h-32 object-contain" />
-                    </div>
-                    <div className="text-[10px] text-slate-800 font-black mt-3 uppercase tracking-wide relative z-10">
-                        Scan with GPay, Paytm, or any UPI App
-                    </div>
-                </div>
 
-                {/* INTERNATIONAL SECTION */}
-                <div className="pt-2">
-                     <div className="flex items-center gap-4 my-4">
-                        <div className="h-0.5 bg-slate-100 flex-1"></div>
-                        <span className="font-black text-slate-800 uppercase">OR SCAN QR ABOVE</span>
-                        <div className="h-0.5 bg-slate-100 flex-1"></div>
-                     </div>
-                     <div className="flex items-center gap-4 my-4">
-                        <div className="h-0.5 bg-slate-100 flex-1"></div>
-                        <span className="text-xs font-bold text-slate-300 uppercase">International</span>
-                        <div className="h-0.5 bg-slate-100 flex-1"></div>
-                     </div>
-                     <Button variant="neutral" onClick={() => window.open(INTERNATIONAL_LINK, '_blank')} className="flex items-center justify-center gap-2 shadow-[0_4px_0_#94a3b8] !py-3">
-                        <Globe size={20} />
-                        <span className="text-sm">Support via PayPal / Card</span>
-                     </Button>
-                </div>
-
-                {user.isDonor && (
-                    <div className="bg-yellow-100 p-4 rounded-xl border-2 border-yellow-300 animate-bounce">
-                        <div className="flex items-center justify-center gap-2 text-yellow-700 font-black text-sm mb-1">
-                             <Star size={18} fill="currentColor" />
-                             <span>HERO OF THE FUTURE!</span>
-                             <Star size={18} fill="currentColor" />
+                    {/* International Section */}
+                    <div className="pt-4 border-t-2 border-slate-100">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <Globe size={16} className="text-slate-400" />
+                            <span className="text-xs font-bold text-slate-500 uppercase">International?</span>
                         </div>
-                        <div className="text-xs text-yellow-600 font-medium">
-                            Thank you for empowering our AI research!
-                        </div>
+                        <Button 
+                            variant="neutral" 
+                            className="!py-3 text-sm flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100"
+                            onClick={() => window.open(INTERNATIONAL_LINK, '_blank')}
+                        >
+                            <CreditCard size={16}/> Pay via PayPal / Card
+                        </Button>
                     </div>
-                )}
+                </div>
             </div>
-         </div>
+        </div>
     </div>
     );
-}
-
-export const SettingsScreen = ({ onBack, settings, onUpdateSettings }: { onBack: () => void, settings: AppSettings, onUpdateSettings: (s: AppSettings) => void }) => {
-    
-    const toggle = (key: keyof AppSettings) => {
-        onUpdateSettings({
-            ...settings,
-            [key]: !settings[key as any]
-        });
-    };
-
-    return (
-        <div className="absolute inset-0 z-50 bg-[#5c94fc] p-6 overflow-y-auto">
-             <div className="max-w-md mx-auto space-y-6">
-                 <div className="flex items-center gap-4 mb-6">
-                    <button onClick={onBack} className="p-3 bg-white rounded-full text-slate-800 shadow-md hover:scale-110 transition-transform"><ArrowLeft size={24}/></button>
-                    <h2 className="text-3xl font-black text-white drop-shadow-md">Settings</h2>
-                </div>
-
-                <div className="bg-white rounded-3xl p-6 shadow-xl border-4 border-slate-100 space-y-6">
-                    
-                    {/* Audio Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-black text-slate-700 uppercase border-b-2 border-slate-100 pb-2">Audio</h3>
-                        
-                        <div className="flex items-center justify-between p-2">
-                             <div className="flex items-center gap-3">
-                                 <div className={`p-2 rounded-lg ${settings.musicVolume ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
-                                    {settings.musicVolume ? <Volume2 size={24}/> : <VolumeX size={24}/>}
-                                 </div>
-                                 <span className="font-bold text-slate-700 text-lg">Music</span>
-                             </div>
-                             <button onClick={() => toggle('musicVolume')} className={`w-14 h-8 rounded-full transition-colors relative ${settings.musicVolume ? 'bg-green-500' : 'bg-slate-300'}`}>
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${settings.musicVolume ? 'left-7' : 'left-1'}`}></div>
-                             </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-2">
-                             <div className="flex items-center gap-3">
-                                 <div className={`p-2 rounded-lg ${settings.sfxVolume ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                                    <Trophy size={24}/> 
-                                 </div>
-                                 <span className="font-bold text-slate-700 text-lg">Sound FX</span>
-                             </div>
-                             <button onClick={() => toggle('sfxVolume')} className={`w-14 h-8 rounded-full transition-colors relative ${settings.sfxVolume ? 'bg-blue-500' : 'bg-slate-300'}`}>
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${settings.sfxVolume ? 'left-7' : 'left-1'}`}></div>
-                             </button>
-                        </div>
-                    </div>
-
-                    {/* Gameplay Section */}
-                    <div className="space-y-4 pt-2">
-                        <h3 className="text-lg font-black text-slate-700 uppercase border-b-2 border-slate-100 pb-2">Gameplay</h3>
-                        
-                        <div className="flex items-center justify-between p-2 pt-4">
-                             <div className="flex items-center gap-3">
-                                 <div className={`p-2 rounded-lg ${settings.highQuality ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}>
-                                    {settings.highQuality ? <Sun size={24}/> : <Moon size={24}/>}
-                                 </div>
-                                 <span className="font-bold text-slate-700 text-lg">High Quality</span>
-                             </div>
-                             <button onClick={() => toggle('highQuality')} className={`w-14 h-8 rounded-full transition-colors relative ${settings.highQuality ? 'bg-yellow-500' : 'bg-slate-300'}`}>
-                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${settings.highQuality ? 'left-7' : 'left-1'}`}></div>
-                             </button>
-                        </div>
-                    </div>
-
-                    <div className="pt-6 border-t-2 border-slate-100 text-center">
-                        <p className="text-xs font-bold text-slate-400 uppercase">Flying Plumber v1.1</p>
-                    </div>
-
-                </div>
-             </div>
-        </div>
-    )
-}
+};
